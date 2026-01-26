@@ -83,7 +83,7 @@ export default class PdfService implements IPdfService {
       index.pdfs.push(meta);
       await fs.writeFile(tempPath, JSON.stringify(index, null, 2));
       await fs.rename(tempPath, indexPath);
-      
+
       return pdfId;
     } catch (error) {
       // Cleanup on failure (important)
@@ -96,6 +96,82 @@ export default class PdfService implements IPdfService {
       throw error instanceof AppError
         ? error
         : new AppError(HttpStatus.INTERNAL_SERVER_ERROR, messages.SERVER_ERROR);
+    }
+  };
+
+  downloadPdf = async (
+    sessionId: string,
+    pdfId: string,
+    pages: number[],
+  ): Promise<Uint8Array> => {
+    let index: PdfIndex = { pdfs: [] };
+
+    try {
+      //  Resolve paths
+      const basePath = path.join(process.cwd(), "storage", "sessions");
+      const sessionPath = path.join(basePath, sessionId);
+      const pdfFolderPath = path.join(sessionPath, "pdfs", pdfId);
+      const indexPath = path.join(sessionPath, "index.json");
+      const originalPdfPath = path.join(pdfFolderPath, "original.pdf");
+
+      //  Load index.json
+      const indexContent = await fs.readFile(indexPath, "utf-8");
+      index = JSON.parse(indexContent) as PdfIndex;
+
+      //  Validate pdf existence
+      const found = index.pdfs.find((p) => p.pdfId === pdfId);
+      if (!found) {
+        throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
+      }
+
+      //  Validate expiration
+      if (Date.now() > found.expiresAt) {
+        throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
+      }
+
+      //  Read original PDF
+      const originalPdfBytes = await fs.readFile(originalPdfPath);
+
+      //  Load PDF document
+      const originalPdfDoc = await PDFDocument.load(originalPdfBytes);
+      const totalPages = originalPdfDoc.getPageCount();
+
+      //  Validate requested pages
+      for (const page of pages) {
+        if (!Number.isInteger(page) || page < 1 || page > totalPages) {
+          throw new AppError(
+            HttpStatus.BAD_REQUEST,
+            messages.INVALID_PAGE_NUMBER,
+          );
+        }
+      }
+
+      //  Create new PDF
+      const newPdfDoc = await PDFDocument.create();
+      const pageIndices = pages.map((p) => p - 1);
+
+      const copiedPages = await newPdfDoc.copyPages(
+        originalPdfDoc,
+        pageIndices,
+      );
+
+      for (const page of copiedPages) {
+        newPdfDoc.addPage(page);
+      }
+
+      //  Generate final PDF bytes
+      const pdfBytes = await newPdfDoc.save();
+
+      return pdfBytes;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        messages.SERVER_ERROR,
+      );
     }
   };
 }

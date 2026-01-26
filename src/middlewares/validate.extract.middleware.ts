@@ -1,40 +1,59 @@
 import { Request, Response, NextFunction } from "express";
+import { sendError } from "../utils/response.util";
+import { HttpStatus } from "../constants/statusCodes";
+import { messages } from "../constants/httpMessages";
 
 export const validateExtractRequest = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const { pdfId, pages } = req.body;
+  const { pdfId, pages } = req.query;
 
-  // 1️⃣ pdfId
+  //  Validate pdfId
   if (!pdfId || typeof pdfId !== "string") {
-    return res.status(400).json({ message: "Invalid or missing pdfId" });
+    return sendError(res, HttpStatus.BAD_REQUEST, messages.INVALID_PDF_ID);
   }
 
-  // 2️⃣ pages array
-  if (!Array.isArray(pages) || pages.length === 0) {
-    return res.status(400).json({
-      message: "Pages must be a non-empty array",
-    });
+  //  Validate pages existence
+  if (!pages || typeof pages !== "string") {
+    return sendError(res, HttpStatus.BAD_REQUEST, messages.NO_PAGES_PROVIDED);
   }
 
-  // 3️⃣ Validate page numbers
-  for (const page of pages) {
+  //  Parse pages → number[]
+  const parsedPages = pages
+    .split(",")
+    .map((p) => Number(p.trim()))
+    .filter((p) => !Number.isNaN(p));
+
+  if (parsedPages.length === 0) {
+    return sendError(res, HttpStatus.BAD_REQUEST, messages.INVALID_PAGE_NUMBER);
+  }
+
+  //  Validate page numbers
+  for (const page of parsedPages) {
     if (!Number.isInteger(page) || page < 1) {
-      return res.status(400).json({
-        message: "Page numbers must be integers greater than 0",
-      });
+      return sendError(
+        res,
+        HttpStatus.BAD_REQUEST,
+        messages.INVALID_PAGE_NUMBER,
+      );
     }
   }
 
-  // 4️⃣ No duplicates
-  const uniquePages = new Set(pages);
-  if (uniquePages.size !== pages.length) {
-    return res.status(400).json({
-      message: "Duplicate page numbers are not allowed",
-    });
+  //  Remove duplicates
+  const uniquePages = [...new Set(parsedPages)];
+
+  if (uniquePages.length !== parsedPages.length) {
+    return sendError(res, HttpStatus.BAD_REQUEST, messages.DUPLICATES_FOUND);
   }
+
+  //  Attach normalized data
+  // req.query.pages = uniquePages;
+  req.validatedExtract = {
+    pdfId,
+    pages: uniquePages,
+  };
 
   next();
 };

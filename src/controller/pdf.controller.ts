@@ -22,4 +22,26 @@ export default class PdfController implements IPdfController {
       next(error);
     }
   };
+
+  extractPdf = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const sessionId = req.pdf_session_id!;
+      const { pdfId, pages } = req.validatedExtract!;
+
+      const pdfBytes = await this._pdfService.downloadPdf(
+        sessionId,
+        pdfId,
+        pages,
+      );
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="extracted.pdf"',
+      );
+
+      res.status(HttpStatus.OK).send(Buffer.from(pdfBytes));
+    } catch (error) {
+      next(error);
+    }
+  };
 }

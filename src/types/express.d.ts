@@ -5,6 +5,10 @@ declare global {
     interface Request {
       pdf_session_id?: string;
       pdf?: File;
+      validatedExtract?: {
+        pdfId: string;
+        pages: number[];
+      };
     }
   }
 }
