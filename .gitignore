@@ -60,3 +60,7 @@ coverage/
 # ===============================
 tmp/
 temp/
+
+
+# Uploaded pdfs
+storage/

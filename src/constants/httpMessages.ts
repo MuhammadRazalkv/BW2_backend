@@ -14,6 +14,7 @@ export const messages = {
   NO_FILE_UPLOADED: "No file uploaded",
   SIZE_LIMIT_EXCEEDED: "PDF file size must be less than 10MB",
   NOT_A_PDF_FILE: "Only PDF files are allowed",
+  ENCRYPTED_FILE:'This PDF is password-protected and cannot be processed.',
   // Success messages
   CREATED: "Resource created successfully.",
   UPDATED: "Resource updated successfully.",
