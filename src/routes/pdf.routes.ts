@@ -4,6 +4,7 @@ import PdfService from "../services/pdf.service";
 import multer from "multer";
 import { validatePdfUpload } from "../middlewares/validate.pdf.middleware";
 import { validateExtractRequest } from "../middlewares/validate.extract.middleware";
+import { validateFetchRequest } from "../middlewares/validate.fetch.middlware";
 
 const pdfRoute = Router();
 const upload = multer({
@@ -19,6 +20,8 @@ pdfRoute
     validatePdfUpload,
     pdfController.uploadPdf,
   )
-  .get("/extract", validateExtractRequest, pdfController.extractPdf);
+  .get("/extract", validateExtractRequest, pdfController.extractPdf)
+  .get("/list", pdfController.listPdf)
+  .get("/pdf", validateFetchRequest, pdfController.fetchPdf);
 
 export default pdfRoute;

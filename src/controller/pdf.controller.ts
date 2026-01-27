@@ -44,4 +44,30 @@ export default class PdfController implements IPdfController {
       next(error);
     }
   };
+
+  listPdf = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const sessionId = req.pdf_session_id!;
+      const list = await this._pdfService.pdfHistory(sessionId);
+      sendSuccess(res, HttpStatus.OK, { list }, messages.OK);
+    } catch (error) {
+      next(error);
+    }
+  };
+  fetchPdf = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      console.log("fetch pdf");
+
+      const sessionId = req.pdf_session_id!;
+      const pdfId = req.pdfId!;
+      console.log("pdfId", pdfId);
+
+      const pdfBytes = await this._pdfService.getPdf(sessionId, pdfId);
+      res.setHeader("Content-Type", "application/pdf");
+
+      res.status(HttpStatus.OK).send(Buffer.from(pdfBytes));
+    } catch (error) {
+      next(error);
+    }
+  };
 }

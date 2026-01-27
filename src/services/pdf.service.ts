@@ -8,7 +8,7 @@ import { messages } from "../constants/httpMessages";
 import fs from "fs/promises";
 import path from "node:path";
 
-type MetaData = {
+export type MetaData = {
   pdfId: string;
   originalName: string;
   pageCount: number;
@@ -173,5 +173,53 @@ export default class PdfService implements IPdfService {
         messages.SERVER_ERROR,
       );
     }
+  };
+
+  pdfHistory = async (sessionId: string) => {
+    let index: PdfIndex = { pdfs: [] };
+    const basePath = path.join(process.cwd(), "storage", "sessions");
+    const sessionPath = path.join(basePath, sessionId);
+    const indexPath = path.join(sessionPath, "index.json");
+    try {
+      const indexContent = await fs.readFile(indexPath, "utf-8");
+      index = JSON.parse(indexContent) as PdfIndex;
+    } catch (error) {
+      throw new AppError(HttpStatus.NOT_FOUND, messages.NOTHING_HERE);
+    }
+    const metadata = index.pdfs.filter((item) => Date.now() < item.expiresAt);
+    return metadata.reverse();
+  };
+
+  getPdf = async (sessionId: string, pdfId: string) => {
+    let index: PdfIndex = { pdfs: [] };
+    const basePath = path.join(process.cwd(), "storage", "sessions");
+    const sessionPath = path.join(basePath, sessionId);
+    const indexPath = path.join(sessionPath, "index.json");
+
+    try {
+      const indexContent = await fs.readFile(indexPath, "utf-8");
+      index = JSON.parse(indexContent) as PdfIndex;
+    } catch (error) {
+      throw new AppError(HttpStatus.NOT_FOUND, messages.NOTHING_HERE);
+    }
+    const found = index.pdfs.find((p) => p.pdfId === pdfId);
+    if (!found) {
+      throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
+    }
+
+    //  Validate expiration
+    if (Date.now() > found.expiresAt) {
+      throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
+    }
+    const pdfFolderPath = path.join(sessionPath, "pdfs", pdfId);
+    const originalPdfPath = path.join(pdfFolderPath, "original.pdf");
+    const originalPdfBytes = await fs.readFile(originalPdfPath);
+    if (!originalPdfBytes) {
+      throw new AppError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        messages.FAILED_TO_ACCESS_PDF,
+      );
+    }
+    return originalPdfBytes;
   };
 }

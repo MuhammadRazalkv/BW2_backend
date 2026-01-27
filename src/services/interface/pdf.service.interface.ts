@@ -1,3 +1,5 @@
+import { MetaData } from "../pdf.service";
+
 type UploadedPdf = {
   buffer: Buffer;
   originalName: string;
@@ -11,5 +13,10 @@ export default interface IPdfService {
     sessionId: string,
     pdfId: string,
     pages: number[],
+  ) => Promise<Uint8Array<ArrayBufferLike>>;
+  pdfHistory: (sessionId: string) => Promise<MetaData[]>;
+  getPdf: (
+    sessionId: string,
+    pdfId: string,
   ) => Promise<Uint8Array<ArrayBufferLike>>;
 }

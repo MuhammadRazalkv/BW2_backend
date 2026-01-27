@@ -19,6 +19,9 @@ export const messages = {
   INVALID_PAGE_NUMBER: "Page numbers must be integers greater than 0",
   DUPLICATES_FOUND: "Duplicate page numbers are not allowed",
   CONTENT_EXPIRED: "This content is no longer available",
+  NOTHING_HERE: "You haven't uploaded any PDFs in this session",
+  FAILED_TO_ACCESS_PDF:
+    "We couldn't access this PDF. Please try again or re-upload.",
   // Success messages
   CREATED: "Resource created successfully.",
   UPDATED: "Resource updated successfully.",

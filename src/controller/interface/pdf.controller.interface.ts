@@ -7,4 +7,6 @@ export default interface IPdfController {
     res: Response,
     next: NextFunction,
   ) => Promise<void>;
+  listPdf: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+  fetchPdf: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 }

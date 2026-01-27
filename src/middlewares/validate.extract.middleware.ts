@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { sendError } from "../utils/response.util";
 import { HttpStatus } from "../constants/statusCodes";
 import { messages } from "../constants/httpMessages";
+import { isValidPdfId } from "../utils/pdfIdValidation";
 
 export const validateExtractRequest = (
   req: Request,
@@ -14,7 +15,10 @@ export const validateExtractRequest = (
   if (!pdfId || typeof pdfId !== "string") {
     return sendError(res, HttpStatus.BAD_REQUEST, messages.INVALID_PDF_ID);
   }
-
+  if (!isValidPdfId(pdfId)) {
+    sendError(res, HttpStatus.BAD_REQUEST, messages.INVALID_PDF_ID);
+    return;
+  }
   //  Validate pages existence
   if (!pages || typeof pages !== "string") {
     return sendError(res, HttpStatus.BAD_REQUEST, messages.NO_PAGES_PROVIDED);

@@ -9,6 +9,7 @@ declare global {
         pdfId: string;
         pages: number[];
       };
+      pdfId?: string;
     }
   }
 }
