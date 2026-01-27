@@ -1,18 +1,27 @@
 import { Request, Response, NextFunction } from "express";
 import { randomUUID } from "node:crypto";
+const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+const cookieOptions = {
+  maxAge: SESSION_MAX_AGE,
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+};
+
 const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
-  let pdf_session_id = req.cookies.pdf_session_id;
-  if (!pdf_session_id) {
-    const uuid = randomUUID();
-    res.cookie("pdf_session_id", uuid, {
-      maxAge: 86400000, // Expires after 24 hours (in milliseconds)
-      httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript (enhances security)
-      secure: process.env.NODE_ENV === "production", // Set to true if using HTTPS (for local development, use false)
-      sameSite: "lax", // Controls when the cookie is sent with cross-site requests
-    });
-    pdf_session_id = uuid;
+  let sessionId = req.cookies.pdf_session_id;
+
+  // Optional: validate UUID format
+  if (!sessionId) {
+    sessionId = randomUUID();
   }
-  req.pdf_session_id = pdf_session_id;
+
+  // Sliding expiration
+  res.cookie("pdf_session_id", sessionId, cookieOptions);
+
+  req.pdf_session_id = sessionId;
   next();
 };
+
 export default sessionHandler;
