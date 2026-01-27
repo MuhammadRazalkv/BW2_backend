@@ -2,9 +2,9 @@ import { randomUUID } from "node:crypto";
 import IPdfService from "./interface/pdf.service.interface";
 import { PDFDocument } from "pdf-lib";
 // import fs from "fs";
-import { AppError } from "../utils/app.error";
-import { HttpStatus } from "../constants/statusCodes";
-import { messages } from "../constants/httpMessages";
+import { AppError } from "../utils/app.error.js";
+import { HttpStatus } from "../constants/statusCodes.js";
+import { messages } from "../constants/httpMessages.js";
 import fs from "fs/promises";
 import path from "node:path";
 

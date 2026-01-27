@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { sendError } from "../utils/response.util";
-import { HttpStatus } from "../constants/statusCodes";
-import { messages } from "../constants/httpMessages";
+import { sendError } from "../utils/response.util.js";
+import { HttpStatus } from "../constants/statusCodes.js";
+import { messages } from "../constants/httpMessages.js";
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
 const PDF_MAGIC = "%PDF-";

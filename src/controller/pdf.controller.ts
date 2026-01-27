@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import IPdfService from "../services/interface/pdf.service.interface";
 import IPdfController from "./interface/pdf.controller.interface";
-import { sendSuccess } from "../utils/response.util";
-import { HttpStatus } from "../constants/statusCodes";
-import { messages } from "../constants/httpMessages";
+import { sendSuccess } from "../utils/response.util.js";
+import { HttpStatus } from "../constants/statusCodes.js";
+import { messages } from "../constants/httpMessages.js";
 
 export default class PdfController implements IPdfController {
   constructor(private _pdfService: IPdfService) {}

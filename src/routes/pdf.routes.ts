@@ -1,10 +1,10 @@
 import { Router } from "express";
-import PdfController from "../controller/pdf.controller";
-import PdfService from "../services/pdf.service";
+import PdfController from "../controller/pdf.controller.js";
+import PdfService from "../services/pdf.service.js";
 import multer from "multer";
-import { validatePdfUpload } from "../middlewares/validate.pdf.middleware";
-import { validateExtractRequest } from "../middlewares/validate.extract.middleware";
-import { validateFetchRequest } from "../middlewares/validate.fetch.middlware";
+import { validatePdfUpload } from "../middlewares/validate.pdf.middleware.js";
+import { validateExtractRequest } from "../middlewares/validate.extract.middleware.js";
+import { validateFetchRequest } from "../middlewares/validate.fetch.middleware.js";
 
 const pdfRoute = Router();
 const upload = multer({
