@@ -140,6 +140,9 @@ export default class PdfService implements IPdfService {
       //     messages.FAILED_TO_ACCESS_PDF,
       //   );
       // }
+console.log("Node version:", process.version);
+console.log("fetch exists:", typeof fetch);
+
 
       const publicUrl =
         `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
