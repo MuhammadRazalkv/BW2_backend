@@ -4,8 +4,8 @@ import { PDFDocument } from "pdf-lib";
 import { AppError } from "../utils/app.error.js";
 import { HttpStatus } from "../constants/statusCodes.js";
 import { messages } from "../constants/httpMessages.js";
-import { supabase } from "../config/supabase";
-import { getFromRedis, setToRedis } from "../utils/redis.utils";
+import { supabase } from "../config/supabase.js";
+import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
 
 export type MetaData = {
   pdfId: string;

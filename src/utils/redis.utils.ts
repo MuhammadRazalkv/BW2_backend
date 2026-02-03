@@ -1,4 +1,4 @@
-import redis from "../config/redis";
+import redis from "../config/redis.js";
 
 export async function setToRedis(key: string, value: string) {
   await redis.set(key, value, "EX", 60 * 60 * 24);
