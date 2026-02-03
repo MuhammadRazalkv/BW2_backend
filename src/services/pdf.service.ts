@@ -118,24 +118,35 @@ export default class PdfService implements IPdfService {
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
-      console.log(
-        "Using service role:",
-        process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
-      );
-      console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-      const { data: list, error: listError } = await supabase.storage
-        .from("pdfs")
-        .list(`sessions/${sessionId}/pdfs/${pdfId}`);
+      // console.log(
+      //   "Using service role:",
+      //   process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
+      // );
+      // console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+      // const { data: list, error: listError } = await supabase.storage
+      //   .from("pdfs")
+      //   .list(`sessions/${sessionId}/pdfs/${pdfId}`);
 
-      console.log("LIST:", list, listError);
+      // console.log("LIST:", list, listError);
+      // const { data, error } = await supabase.storage
+      //   .from("pdfs")
+      //   .download(originalPdfPath);
 
-      const { data, error } = await supabase.storage
-        .from("pdfs")
-        .download(originalPdfPath);
+      // if (error || !data) {
+      //   console.error("Error from accessing files", error);
 
-      if (error || !data) {
-        console.error("Error from accessing files", error);
+      //   throw new AppError(
+      //     HttpStatus.INTERNAL_SERVER_ERROR,
+      //     messages.FAILED_TO_ACCESS_PDF,
+      //   );
+      // }
 
+      const publicUrl =
+        `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
+        `pdfs/${originalPdfPath}`;
+
+      const res = await fetch(publicUrl);
+      if (!res.ok) {
         throw new AppError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           messages.FAILED_TO_ACCESS_PDF,
@@ -143,7 +154,8 @@ export default class PdfService implements IPdfService {
       }
 
       //  Load PDF document
-      const originalPdfDoc = await PDFDocument.load(await data.arrayBuffer());
+      const originalPdfDoc = await PDFDocument.load(await res.arrayBuffer());
+
       const totalPages = originalPdfDoc.getPageCount();
 
       //  Validate requested pages
@@ -216,18 +228,32 @@ export default class PdfService implements IPdfService {
       throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
     }
 
-    const { data, error } = await supabase.storage
-      .from("pdfs")
-      .download(originalPdfPath);
+    const publicUrl =
+      `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
+      `pdfs/${originalPdfPath}`;
 
-    if (error || !data) {
+    const res = await fetch(publicUrl);
+    if (!res.ok) {
       throw new AppError(
         HttpStatus.INTERNAL_SERVER_ERROR,
         messages.FAILED_TO_ACCESS_PDF,
       );
     }
 
-    const buffer = await data.arrayBuffer();
+    // const originalPdfDoc = await PDFDocument.load(await res.arrayBuffer());
+
+    // const { data, error } = await supabase.storage
+    //   .from("pdfs")
+    //   .download(originalPdfPath);
+
+    // if (error || !data) {
+    //   throw new AppError(
+    //     HttpStatus.INTERNAL_SERVER_ERROR,
+    //     messages.FAILED_TO_ACCESS_PDF,
+    //   );
+    // }
+
+    const buffer = await res.arrayBuffer();
     return new Uint8Array(buffer);
   };
 }
