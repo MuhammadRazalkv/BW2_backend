@@ -7,7 +7,7 @@ import { messages } from "../constants/httpMessages.js";
 import { supabase } from "../config/supabase.js";
 import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
 import fetch from "node-fetch";
-import { buildPdfPath } from "../utils/paths";
+import { buildPdfPath } from "../utils/paths.js";
 
 export type MetaData = {
   pdfId: string;
