@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
 import IPdfService from "./interface/pdf.service.interface";
 import { PDFDocument } from "pdf-lib";
-// import fs from "fs";
 import { AppError } from "../utils/app.error.js";
 import { HttpStatus } from "../constants/statusCodes.js";
 import { messages } from "../constants/httpMessages.js";
-import fs from "fs/promises";
-import path from "node:path";
+import { supabase } from "../config/supabase";
+import { getFromRedis, setToRedis } from "../utils/redis.utils";
 
 export type MetaData = {
   pdfId: string;
@@ -32,15 +31,15 @@ export default class PdfService implements IPdfService {
   ) => {
     const pdfId = randomUUID();
     const now = Date.now();
+    const sessionPath = `sessions/${sessionId}`;
+    const storagePrefix = `${sessionPath}/pdfs/${pdfId}`;
+    const originalPdfPath = `${storagePrefix}/original.pdf`;
+    const metaPath = `${storagePrefix}/meta.json`;
 
-    const basePath = path.join(process.cwd(), "storage", "sessions");
-    const sessionPath = path.join(basePath, sessionId);
-    const pdfPath = path.join(sessionPath, "pdfs", pdfId);
-    const indexPath = path.join(sessionPath, "index.json");
-    const tempPath = path.join(sessionPath, "index.tmp.json");
+    let pdfDoc: PDFDocument;
+
     try {
-      // Loading PDF
-      let pdfDoc: PDFDocument;
+      //  Validate PDF (same as before)
       try {
         pdfDoc = await PDFDocument.load(data.buffer, {
           updateMetadata: false,
@@ -52,43 +51,50 @@ export default class PdfService implements IPdfService {
         );
       }
 
-      // Prepare metadata
       const meta = {
         pdfId,
+        sessionId,
         originalName: data.originalName,
         pageCount: pdfDoc.getPageCount(),
         uploadedAt: now,
-        expiresAt: now + 24 * 60 * 60 * 1000, // 24h
+        expiresAt: now + 24 * 60 * 60 * 1000,
         size: data.size,
+        storagePrefix,
       };
 
-      // Create directory structure
-      await fs.mkdir(pdfPath, { recursive: true });
+      //  Upload original PDF
+      const { error: pdfError } = await supabase.storage
+        .from("pdfs")
+        .upload(originalPdfPath, data.buffer, {
+          contentType: data.mimeType,
+          upsert: false,
+        });
 
-      // Write files
-      await fs.writeFile(path.join(pdfPath, "original.pdf"), data.buffer);
+      if (pdfError) throw pdfError;
 
-      await fs.writeFile(
-        path.join(pdfPath, "meta.json"),
-        JSON.stringify(meta, null, 2),
-      );
+      //  Upload metadata JSON
+      const { error: metaError } = await supabase.storage
+        .from("pdfs")
+        .upload(metaPath, Buffer.from(JSON.stringify(meta, null, 2)), {
+          contentType: "application/json",
+          upsert: false,
+        });
 
-      let index: PdfIndex = { pdfs: [] };
-      try {
-        const content = await fs.readFile(indexPath, "utf-8");
-        index = JSON.parse(content);
-      } catch {
-        // file does not exist → first upload
+      if (metaError) throw metaError;
+
+      let sessionData: PdfIndex = { pdfs: [] };
+      let indexContent = await getFromRedis(`session:${sessionId}`);
+      if (indexContent) {
+        sessionData = JSON.parse(indexContent);
       }
-      index.pdfs.push(meta);
-      await fs.writeFile(tempPath, JSON.stringify(index, null, 2));
-      await fs.rename(tempPath, indexPath);
+      sessionData.pdfs.push(meta);
+      await setToRedis(`session:${sessionId}`, JSON.stringify(sessionData));
+      await setToRedis(pdfId, String(now + 24 * 60 * 60 * 1000));
 
       return pdfId;
     } catch (error) {
-      // Cleanup on failure (important)
       try {
-        await fs.rm(pdfPath, { recursive: true, force: true });
+        await supabase.storage.from("pdfs").remove([originalPdfPath, metaPath]);
       } catch {
         /* ignore cleanup errors */
       }
@@ -104,36 +110,28 @@ export default class PdfService implements IPdfService {
     pdfId: string,
     pages: number[],
   ): Promise<Uint8Array> => {
-    let index: PdfIndex = { pdfs: [] };
-
     try {
-      //  Resolve paths
-      const basePath = path.join(process.cwd(), "storage", "sessions");
-      const sessionPath = path.join(basePath, sessionId);
-      const pdfFolderPath = path.join(sessionPath, "pdfs", pdfId);
-      const indexPath = path.join(sessionPath, "index.json");
-      const originalPdfPath = path.join(pdfFolderPath, "original.pdf");
+      const storagePrefix = `sessions/${sessionId}/pdfs/${pdfId}`;
+      const originalPdfPath = `${storagePrefix}/original.pdf`;
 
-      //  Load index.json
-      const indexContent = await fs.readFile(indexPath, "utf-8");
-      index = JSON.parse(indexContent) as PdfIndex;
-
-      //  Validate pdf existence
-      const found = index.pdfs.find((p) => p.pdfId === pdfId);
-      if (!found) {
-        throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
-      }
-
-      //  Validate expiration
-      if (Date.now() > found.expiresAt) {
+      const exp = await getFromRedis(pdfId);
+      if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
 
-      //  Read original PDF
-      const originalPdfBytes = await fs.readFile(originalPdfPath);
+      const { data, error } = await supabase.storage
+        .from("pdfs")
+        .download(originalPdfPath);
+
+      if (error || !data) {
+        throw new AppError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          messages.FAILED_TO_ACCESS_PDF,
+        );
+      }
 
       //  Load PDF document
-      const originalPdfDoc = await PDFDocument.load(originalPdfBytes);
+      const originalPdfDoc = await PDFDocument.load(await data.arrayBuffer());
       const totalPages = originalPdfDoc.getPageCount();
 
       //  Validate requested pages
@@ -177,14 +175,9 @@ export default class PdfService implements IPdfService {
 
   pdfHistory = async (sessionId: string) => {
     let index: PdfIndex = { pdfs: [] };
-    const basePath = path.join(process.cwd(), "storage", "sessions");
-    const sessionPath = path.join(basePath, sessionId);
-    const indexPath = path.join(sessionPath, "index.json");
-    try {
-      const indexContent = await fs.readFile(indexPath, "utf-8");
-      index = JSON.parse(indexContent) as PdfIndex;
-    } catch (error) {
-      throw new AppError(HttpStatus.NOT_FOUND, messages.NOTHING_HERE);
+    let rawData = await getFromRedis(`session:${sessionId}`);
+    if (rawData) {
+      index = JSON.parse(rawData);
     }
     const metadata = index.pdfs.filter((item) => Date.now() < item.expiresAt);
     return metadata.reverse();
@@ -192,16 +185,15 @@ export default class PdfService implements IPdfService {
 
   getPdf = async (sessionId: string, pdfId: string) => {
     let index: PdfIndex = { pdfs: [] };
-    const basePath = path.join(process.cwd(), "storage", "sessions");
-    const sessionPath = path.join(basePath, sessionId);
-    const indexPath = path.join(sessionPath, "index.json");
 
-    try {
-      const indexContent = await fs.readFile(indexPath, "utf-8");
-      index = JSON.parse(indexContent) as PdfIndex;
-    } catch (error) {
-      throw new AppError(HttpStatus.NOT_FOUND, messages.NOTHING_HERE);
+    const sessionPath = `sessions/${sessionId}`;
+    const storagePrefix = `${sessionPath}/pdfs/${pdfId}`;
+    const originalPdfPath = `${storagePrefix}/original.pdf`;
+    let rawData = await getFromRedis(`session:${sessionId}`);
+    if (rawData) {
+      index = JSON.parse(rawData);
     }
+
     const found = index.pdfs.find((p) => p.pdfId === pdfId);
     if (!found) {
       throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
@@ -211,15 +203,19 @@ export default class PdfService implements IPdfService {
     if (Date.now() > found.expiresAt) {
       throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
     }
-    const pdfFolderPath = path.join(sessionPath, "pdfs", pdfId);
-    const originalPdfPath = path.join(pdfFolderPath, "original.pdf");
-    const originalPdfBytes = await fs.readFile(originalPdfPath);
-    if (!originalPdfBytes) {
+
+    const { data, error } = await supabase.storage
+      .from("pdfs")
+      .download(originalPdfPath);
+
+    if (error || !data) {
       throw new AppError(
         HttpStatus.INTERNAL_SERVER_ERROR,
         messages.FAILED_TO_ACCESS_PDF,
       );
     }
-    return originalPdfBytes;
+
+    const buffer = await data.arrayBuffer();
+    return new Uint8Array(buffer);
   };
 }

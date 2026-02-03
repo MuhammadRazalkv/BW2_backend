@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.93.3",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/multer": "^2.0.0",
@@ -23,7 +24,9 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
+    "ioredis": "^5.9.2",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {

@@ -1,11 +1,9 @@
 import cleanUpService from "../services/cleanup.service.js";
-
-const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
+import cron from "node-cron";
 
 export function startCleanupJob() {
   cleanUpService();
-
-  setInterval(() => {
+  cron.schedule(`0 * * * *`, () => {
     cleanUpService();
-  }, CLEANUP_INTERVAL);
+  });
 }
