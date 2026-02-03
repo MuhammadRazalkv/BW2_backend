@@ -6,6 +6,7 @@ import { HttpStatus } from "../constants/statusCodes.js";
 import { messages } from "../constants/httpMessages.js";
 import { supabase } from "../config/supabase.js";
 import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
+import fetch from "node-fetch";
 
 export type MetaData = {
   pdfId: string;
@@ -140,8 +141,7 @@ export default class PdfService implements IPdfService {
       //     messages.FAILED_TO_ACCESS_PDF,
       //   );
       // }
-console.log("Node version:", process.version);
-console.log("fetch exists:", typeof fetch);
+
 
 
       const publicUrl =

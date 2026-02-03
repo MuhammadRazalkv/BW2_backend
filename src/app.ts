@@ -30,5 +30,6 @@ app.use(limiter);
 app.use(sessionHandler);
 app.use("/pdf", pdfRoute);
 app.use(errorHandler);
-
+console.log("Node version:", process.version);
+console.log("fetch exists:", typeof fetch);
 export default app;
