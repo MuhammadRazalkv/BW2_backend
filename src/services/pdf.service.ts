@@ -90,7 +90,8 @@ export default class PdfService implements IPdfService {
       }
       sessionData.pdfs.push(meta);
       await setToRedis(`session:${sessionId}`, JSON.stringify(sessionData));
-      await setToRedis(`pdf:${pdfId}`, String(now + 24 * 60 * 60 * 1000));
+      const redisKey = `pdf:${sessionId}:${pdfId}`;
+      await setToRedis(redisKey, String(now + 24 * 60 * 60 * 1000));
 
       return pdfId;
     } catch (error) {
@@ -115,7 +116,7 @@ export default class PdfService implements IPdfService {
   ): Promise<Uint8Array> => {
     try {
       const originalPdfPath = buildPdfPath(sessionId, pdfId);
-
+      const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
       const exp = await getFromRedis(`pdf:${pdfId}`);
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
@@ -125,11 +126,16 @@ export default class PdfService implements IPdfService {
         process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
       );
       console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-      const { data: list, error: listError } = await supabase.storage
+      const { data: files, error: listError } = await supabase.storage
         .from("pdfs")
-        .list(originalPdfPath);
+        .list(dirPath);
 
-      console.log("LIST:", list, listError);
+      console.log("LIST:", files, listError);
+
+      if (!files || !files.some((f) => f.name === "original.pdf")) {
+        throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
+      }
+
       const { data, error } = await supabase.storage
         .from("pdfs")
         .download(originalPdfPath);
