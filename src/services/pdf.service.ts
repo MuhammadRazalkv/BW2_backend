@@ -117,7 +117,8 @@ export default class PdfService implements IPdfService {
     try {
       const originalPdfPath = buildPdfPath(sessionId, pdfId);
       const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
-      const exp = await getFromRedis(`pdf:${pdfId}`);
+      const redisKey = `pdf:${sessionId}:${pdfId}`;
+      const exp = await getFromRedis(redisKey);
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
