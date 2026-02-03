@@ -6,7 +6,7 @@ import { HttpStatus } from "../constants/statusCodes.js";
 import { messages } from "../constants/httpMessages.js";
 import { supabase } from "../config/supabase.js";
 import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
-import fetch from "node-fetch";
+// import fetch from "node-fetch";
 import { buildPdfPath } from "../utils/paths.js";
 
 export type MetaData = {
@@ -120,37 +120,22 @@ export default class PdfService implements IPdfService {
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
-      // console.log(
-      //   "Using service role:",
-      //   process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
-      // );
-      // console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-      // const { data: list, error: listError } = await supabase.storage
-      //   .from("pdfs")
-      //   .list(`sessions/${sessionId}/pdfs/${pdfId}`);
+      console.log(
+        "Using service role:",
+        process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
+      );
+      console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+      const { data: list, error: listError } = await supabase.storage
+        .from("pdfs")
+        .list(originalPdfPath);
 
-      // console.log("LIST:", list, listError);
-      // const { data, error } = await supabase.storage
-      //   .from("pdfs")
-      //   .download(originalPdfPath);
+      console.log("LIST:", list, listError);
+      const { data, error } = await supabase.storage
+        .from("pdfs")
+        .download(originalPdfPath);
 
-      // if (error || !data) {
-      //   console.error("Error from accessing files", error);
-
-      //   throw new AppError(
-      //     HttpStatus.INTERNAL_SERVER_ERROR,
-      //     messages.FAILED_TO_ACCESS_PDF,
-      //   );
-      // }
-
-      const publicUrl =
-        `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
-        `pdfs/${originalPdfPath}`;
-      console.log("publicUrl", publicUrl);
-
-      const res = await fetch(publicUrl);
-      if (!res.ok) {
-        console.log("Res ", res);
+      if (error || !data) {
+        console.error("Error from accessing files", error);
 
         throw new AppError(
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -158,8 +143,23 @@ export default class PdfService implements IPdfService {
         );
       }
 
+      // const publicUrl =
+      //   `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
+      //   `pdfs/${originalPdfPath}`;
+      // console.log("publicUrl", publicUrl);
+
+      // const res = await fetch(publicUrl);
+      // if (!res.ok) {
+      //   console.log("Res ", res);
+
+      //   throw new AppError(
+      //     HttpStatus.INTERNAL_SERVER_ERROR,
+      //     messages.FAILED_TO_ACCESS_PDF,
+      //   );
+      // }
+
       //  Load PDF document
-      const originalPdfDoc = await PDFDocument.load(await res.arrayBuffer());
+      const originalPdfDoc = await PDFDocument.load(await data.arrayBuffer());
 
       const totalPages = originalPdfDoc.getPageCount();
 
@@ -231,32 +231,32 @@ export default class PdfService implements IPdfService {
       throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
     }
 
-    const publicUrl =
-      `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
-      `pdfs/${originalPdfPath}`;
+    // const publicUrl =
+    //   `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
+    //   `pdfs/${originalPdfPath}`;
 
-    const res = await fetch(publicUrl);
-    if (!res.ok) {
-      throw new AppError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        messages.FAILED_TO_ACCESS_PDF,
-      );
-    }
-
-    // const originalPdfDoc = await PDFDocument.load(await res.arrayBuffer());
-
-    // const { data, error } = await supabase.storage
-    //   .from("pdfs")
-    //   .download(originalPdfPath);
-
-    // if (error || !data) {
+    // const res = await fetch(publicUrl);
+    // if (!res.ok) {
     //   throw new AppError(
     //     HttpStatus.INTERNAL_SERVER_ERROR,
     //     messages.FAILED_TO_ACCESS_PDF,
     //   );
     // }
 
-    const buffer = await res.arrayBuffer();
+    // const originalPdfDoc = await PDFDocument.load(await res.arrayBuffer());
+
+    const { data, error } = await supabase.storage
+      .from("pdfs")
+      .download(originalPdfPath);
+
+    if (error || !data) {
+      throw new AppError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        messages.FAILED_TO_ACCESS_PDF,
+      );
+    }
+
+    const buffer = await data.arrayBuffer();
     return new Uint8Array(buffer);
   };
 }
