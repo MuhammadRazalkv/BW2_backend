@@ -90,14 +90,14 @@ export default class PdfService implements IPdfService {
       }
       sessionData.pdfs.push(meta);
       await setToRedis(`session:${sessionId}`, JSON.stringify(sessionData));
-      await setToRedis(pdfId, String(now + 24 * 60 * 60 * 1000));
+      await setToRedis(`pdf:${pdfId}`, String(now + 24 * 60 * 60 * 1000));
 
       return pdfId;
     } catch (error) {
       try {
         await supabase.storage.from("pdfs").remove([originalPdfPath, metaPath]);
       } catch {
-        /* ignore cleanup errors */
+        // ignore cleanup errors 
       }
 
       throw error instanceof AppError
@@ -115,7 +115,7 @@ export default class PdfService implements IPdfService {
       const storagePrefix = `sessions/${sessionId}/pdfs/${pdfId}`;
       const originalPdfPath = `${storagePrefix}/original.pdf`;
 
-      const exp = await getFromRedis(pdfId);
+      const exp = await getFromRedis(`pdf:${pdfId}`);
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
@@ -147,9 +147,12 @@ export default class PdfService implements IPdfService {
       const publicUrl =
         `${process.env.SUPABASE_URL}/storage/v1/object/public/` +
         `pdfs/${originalPdfPath}`;
-
+      console.log('publicUrl',publicUrl);
+      
       const res = await fetch(publicUrl);
       if (!res.ok) {
+        console.log('Res ',res);
+        
         throw new AppError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           messages.FAILED_TO_ACCESS_PDF,
