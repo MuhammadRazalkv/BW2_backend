@@ -118,6 +118,16 @@ export default class PdfService implements IPdfService {
       if (!exp || Date.now() > parseInt(exp)) {
         throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
       }
+      console.log(
+        "Using service role:",
+        process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
+      );
+      console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+      const { data: list, error: listError } = await supabase.storage
+        .from("pdfs")
+        .list(`sessions/${sessionId}/pdfs/${pdfId}`);
+
+      console.log("LIST:", list, listError);
 
       const { data, error } = await supabase.storage
         .from("pdfs")
