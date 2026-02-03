@@ -124,6 +124,8 @@ export default class PdfService implements IPdfService {
         .download(originalPdfPath);
 
       if (error || !data) {
+        console.error("Error from accessing files", error);
+
         throw new AppError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           messages.FAILED_TO_ACCESS_PDF,
