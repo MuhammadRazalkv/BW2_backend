@@ -8,6 +8,7 @@ import { supabase } from "../config/supabase.js";
 import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
 // import fetch from "node-fetch";
 import { buildPdfPath } from "../utils/paths.js";
+import redis from "../config/redis";
 
 export type MetaData = {
   pdfId: string;
@@ -94,6 +95,9 @@ export default class PdfService implements IPdfService {
       // await setToRedis(redisKey, String(now + 24 * 60 * 60 * 1000));
       await setToRedis(redisKey, "true");
 
+      const testRead = await getFromRedis(redisKey);
+      console.log("IMMEDIATE READ:", testRead);
+
       return pdfId;
     } catch (error) {
       try {
@@ -120,8 +124,8 @@ export default class PdfService implements IPdfService {
       const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
       const redisKey = `pdf:${sessionId}:${pdfId}`;
       const exp = await getFromRedis(redisKey);
-      console.log('exp',exp);
-      
+      console.log("exp", exp);
+
       if (!exp) {
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
@@ -137,6 +141,8 @@ export default class PdfService implements IPdfService {
       console.log("LIST:", files, listError);
 
       if (!files || !files.some((f) => f.name === "original.pdf")) {
+        console.log("files original pdf not found", files);
+
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
 

@@ -12,5 +12,7 @@ redis.ping()
 redis.on("error", (err) => {
   console.error("Redis error", err);
 });
+console.log("REDIS STATUS:", redis.status);
+
 
 export default redis;
