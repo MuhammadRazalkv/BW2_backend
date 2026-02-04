@@ -6,5 +6,5 @@ export async function setToRedis(key: string, value: string) {
 }
 
 export async function getFromRedis(key: string) {
-  return redis.get(key);
+  return await redis.get(key);
 }

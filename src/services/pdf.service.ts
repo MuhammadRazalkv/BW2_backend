@@ -120,6 +120,8 @@ export default class PdfService implements IPdfService {
       const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
       const redisKey = `pdf:${sessionId}:${pdfId}`;
       const exp = await getFromRedis(redisKey);
+      console.log('exp',exp);
+      
       if (!exp) {
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
