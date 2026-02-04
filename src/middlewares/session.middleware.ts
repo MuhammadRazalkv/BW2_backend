@@ -11,6 +11,7 @@ const cookieOptions = {
 
 const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
   let sessionId = req.cookies.pdf_session_id;
+  console.log("Incoming cookie:", req.cookies.pdf_session_id);
 
   // Optional: validate UUID format
   if (!sessionId) {
@@ -19,7 +20,7 @@ const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
 
   // Sliding expiration
   res.cookie("pdf_session_id", sessionId, cookieOptions);
-
+  console.log("Assigned session:", sessionId);
   req.pdf_session_id = sessionId;
   next();
 };
