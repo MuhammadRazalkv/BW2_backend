@@ -91,7 +91,8 @@ export default class PdfService implements IPdfService {
       sessionData.pdfs.push(meta);
       await setToRedis(`session:${sessionId}`, JSON.stringify(sessionData));
       const redisKey = `pdf:${sessionId}:${pdfId}`;
-      await setToRedis(redisKey, String(now + 24 * 60 * 60 * 1000));
+      // await setToRedis(redisKey, String(now + 24 * 60 * 60 * 1000));
+      await setToRedis(redisKey, "true");
 
       return pdfId;
     } catch (error) {
@@ -119,8 +120,8 @@ export default class PdfService implements IPdfService {
       const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
       const redisKey = `pdf:${sessionId}:${pdfId}`;
       const exp = await getFromRedis(redisKey);
-      if (!exp || Date.now() > parseInt(exp)) {
-        throw new AppError(HttpStatus.GONE, messages.CONTENT_EXPIRED);
+      if (!exp) {
+        throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
       console.log(
         "Using service role:",
