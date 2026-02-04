@@ -6,8 +6,9 @@ const cookieOptions = {
   maxAge: SESSION_MAX_AGE,
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  sameSite: "none" as const,
 };
+
 
 const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
   let sessionId = req.cookies.pdf_session_id;
