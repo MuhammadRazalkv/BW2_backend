@@ -48,3 +48,7 @@ SUPABASE_URL:supabase-url
 SUPABASE_SERVICE_ROLE_KEY:'SUPABASE_SERVICE_ROLE_KEY'
 NODE_ENV=development
 FRONT_END_URL
+
+
+--- 
+## Front end : https://github.com/MuhammadRazalkv/BW2_frontend
