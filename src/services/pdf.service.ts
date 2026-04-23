@@ -96,8 +96,8 @@ export default class PdfService implements IPdfService {
 
       const testRead = await getFromRedis(redisKey);
       console.log("IMMEDIATE READ:", testRead);
-console.log("REDIS WRITE KEY >", JSON.stringify(redisKey));
-console.log("PID:", process.pid);
+      console.log("REDIS WRITE KEY >", JSON.stringify(redisKey));
+      console.log("PID:", process.pid);
 
       return pdfId;
     } catch (error) {
@@ -126,8 +126,8 @@ console.log("PID:", process.pid);
       const redisKey = `pdf:${sessionId}:${pdfId}`;
       const exp = await getFromRedis(redisKey);
       console.log("exp", exp);
-console.log("REDIS READ KEY  >", JSON.stringify(redisKey));
-console.log("PID:", process.pid);
+      console.log("REDIS READ KEY  >", JSON.stringify(redisKey));
+      console.log("PID:", process.pid);
 
       if (!exp) {
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
