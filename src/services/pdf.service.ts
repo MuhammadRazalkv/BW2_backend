@@ -144,7 +144,7 @@ export default class PdfService implements IPdfService {
         .from("pdfs")
         .list(dirPath);
 
-      // console.log("LIST:", files, listError);
+      console.log("LIST:", files, listError);
 
       if (!files || !files.some((f) => f.name === "original.pdf")) {
         // console.log("files original pdf not found", files);
