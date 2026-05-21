@@ -1,6 +1,6 @@
-import app from "./app.js";
-import { getRedis } from "./config/redis.js";
-// import { startCleanupJob } from "./jobs/cleanup.jobs.js";
+import app from "./app";
+import { getRedis } from "./config/redis";
+// import { startCleanupJob } from "./jobs/cleanup.jobs";
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { sendError } from "../utils/response.util.js";
-import { HttpStatus } from "../constants/statusCodes.js";
-import { messages } from "../constants/httpMessages.js";
-import { isValidPdfId } from "../utils/pdfIdValidation.js";
+import { sendError } from "../utils/response.util";
+import { HttpStatus } from "../constants/statusCodes";
+import { messages } from "../constants/httpMessages";
+import { isValidPdfId } from "../utils/pdfIdValidation";
 
 export const validateFetchRequest = (
   req: Request,

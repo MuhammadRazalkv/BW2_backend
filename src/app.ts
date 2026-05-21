@@ -3,10 +3,10 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import pdfRoute from "./routes/pdf.routes.js";
+import pdfRoute from "./routes/pdf.routes";
 import { rateLimit } from "express-rate-limit";
-import errorHandler from "./middlewares/error.middleware.js";
-import sessionHandler from "./middlewares/session.middleware.js";
+import errorHandler from "./middlewares/error.middleware";
+import sessionHandler from "./middlewares/session.middleware";
 
 const app = express();
 app.set("trust proxy", 1);

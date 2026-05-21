@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import IPdfService from "./interface/pdf.service.interface";
 import { PDFDocument } from "pdf-lib";
-import { AppError } from "../utils/app.error.js";
-import { HttpStatus } from "../constants/statusCodes.js";
-import { messages } from "../constants/httpMessages.js";
-import { supabase } from "../config/supabase.js";
-import { getFromRedis, setToRedis } from "../utils/redis.utils.js";
+import { AppError } from "../utils/app.error";
+import { HttpStatus } from "../constants/statusCodes";
+import { messages } from "../constants/httpMessages";
+import { supabase } from "../config/supabase";
+import { getFromRedis, setToRedis } from "../utils/redis.utils";
 // import fetch from "node-fetch";
-import { buildPdfPath } from "../utils/paths.js";
+import { buildPdfPath } from "../utils/paths";
 
 export type MetaData = {
   pdfId: string;
@@ -94,15 +94,15 @@ export default class PdfService implements IPdfService {
       // await setToRedis(redisKey, String(now + 24 * 60 * 60 * 1000));
       await setToRedis(redisKey, "true");
 
-      const testRead = await getFromRedis(redisKey);
-      console.log("IMMEDIATE READ:", testRead);
-      console.log("REDIS WRITE KEY >", JSON.stringify(redisKey));
-      console.log("PID:", process.pid);
+      // const testRead = await getFromRedis(redisKey);
+      // console.log("IMMEDIATE READ:", testRead);
+      // console.log("REDIS WRITE KEY >", JSON.stringify(redisKey));
+      // console.log("PID:", process.pid);
 
       return pdfId;
     } catch (error) {
       try {
-        console.log("Removing files");
+        // console.log("Removing files");
 
         await supabase.storage.from("pdfs").remove([originalPdfPath]);
       } catch {
@@ -121,30 +121,33 @@ export default class PdfService implements IPdfService {
     pages: number[],
   ): Promise<Uint8Array> => {
     try {
+      // console.log('SessionId',sessionId);
+      // console.log('pdfid',pdfId);
+      
       const originalPdfPath = buildPdfPath(sessionId, pdfId);
       const dirPath = `sessions/${sessionId}/pdfs/${pdfId}`;
       const redisKey = `pdf:${sessionId}:${pdfId}`;
       const exp = await getFromRedis(redisKey);
-      console.log("exp", exp);
-      console.log("REDIS READ KEY  >", JSON.stringify(redisKey));
-      console.log("PID:", process.pid);
+      // console.log("exp", exp);
+      // console.log("REDIS READ KEY  >", JSON.stringify(redisKey));
+      // console.log("PID:", process.pid);
 
       if (!exp) {
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
-      console.log(
-        "Using service role:",
-        process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
-      );
-      console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+      // console.log(
+      //   "Using service role:",
+      //   process.env.SUPABASE_SERVICE_ROLE_KEY?.startsWith("eyJ"),
+      // );
+      // console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
       const { data: files, error: listError } = await supabase.storage
         .from("pdfs")
         .list(dirPath);
 
-      console.log("LIST:", files, listError);
+      // console.log("LIST:", files, listError);
 
       if (!files || !files.some((f) => f.name === "original.pdf")) {
-        console.log("files original pdf not found", files);
+        // console.log("files original pdf not found", files);
 
         throw new AppError(HttpStatus.NOT_FOUND, messages.NOT_FOUND);
       }
@@ -154,7 +157,7 @@ export default class PdfService implements IPdfService {
         .download(originalPdfPath);
 
       if (error || !data) {
-        console.error("Error from accessing files", error);
+        // console.error("Error from accessing files", error);
 
         throw new AppError(
           HttpStatus.INTERNAL_SERVER_ERROR,

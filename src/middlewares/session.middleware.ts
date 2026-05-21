@@ -2,13 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { randomUUID } from "node:crypto";
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
+const sameSite: "none" | "lax" =
+  process.env.NODE_ENV === "production" ? "none" : "lax";
 const cookieOptions = {
   maxAge: SESSION_MAX_AGE,
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "none" as const,
+  sameSite,
 };
-
 
 const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
   let sessionId = req.cookies.pdf_session_id;
@@ -21,7 +22,7 @@ const sessionHandler = (req: Request, res: Response, next: NextFunction) => {
 
   // Sliding expiration
   res.cookie("pdf_session_id", sessionId, cookieOptions);
-  console.log("Assigned session:", sessionId);
+  // console.log("Assigned session:", sessionId);
   req.pdf_session_id = sessionId;
   next();
 };

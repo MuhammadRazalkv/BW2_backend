@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/app.error.js";
-import { HttpStatus } from "../constants/statusCodes.js";
-import { messages } from "../constants/httpMessages.js";
+import { AppError } from "../utils/app.error";
+import { HttpStatus } from "../constants/statusCodes";
+import { messages } from "../constants/httpMessages";
 const errorHandler = async (
   err: AppError | Error,
   _req: Request,

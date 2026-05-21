@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import IPdfService from "../services/interface/pdf.service.interface";
 import IPdfController from "./interface/pdf.controller.interface";
-import { sendSuccess } from "../utils/response.util.js";
-import { HttpStatus } from "../constants/statusCodes.js";
-import { messages } from "../constants/httpMessages.js";
+import { sendSuccess } from "../utils/response.util";
+import { HttpStatus } from "../constants/statusCodes";
+import { messages } from "../constants/httpMessages";
 
 export default class PdfController implements IPdfController {
   constructor(private _pdfService: IPdfService) {}
@@ -56,11 +56,9 @@ export default class PdfController implements IPdfController {
   };
   fetchPdf = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log("fetch pdf");
 
       const sessionId = req.pdf_session_id!;
       const pdfId = req.pdfId!;
-      console.log("pdfId", pdfId);
 
       const pdfBytes = await this._pdfService.getPdf(sessionId, pdfId);
       res.setHeader("Content-Type", "application/pdf");

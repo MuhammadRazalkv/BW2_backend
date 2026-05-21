@@ -1,4 +1,4 @@
-// import redis from "../config/redis.js";
+// import redis from "../config/redis";
 
 // export async function setToRedis(key: string, value: string) {
 //   await redis.set(key, value);
@@ -8,7 +8,7 @@
 // export async function getFromRedis(key: string) {
 //   return await redis.get(key);
 // }
-import { getRedis } from "../config/redis.js";
+import { getRedis } from "../config/redis";
 
 export async function setToRedis(
   key: string,
